@@ -33,7 +33,7 @@ namespace Aga.Controls.Tree
 				if (item.Parent != _owner)
 				{
 					if (item.Parent != null)
-						item.Parent.Nodes.Remove(item);
+						item.Parent.RemoveNode(item);
 					item._parent = _owner;
 					item._index = index;
 					for (int i = index; i < Count; i++)
@@ -300,10 +300,54 @@ namespace Aga.Controls.Tree
 			get { return _tag; }
 		}
 
+		public int DescendantsCount { get; private set; } = 0;
 		private Collection<TreeNodeAdv> _nodes;
 		internal Collection<TreeNodeAdv> Nodes
 		{
 			get { return _nodes; }
+		}
+		private IEnumerable<TreeNodeAdv> Ancestors()
+		{
+			var node = this;
+			while (node != null)
+			{
+				yield return node;
+				node = node.Parent;
+			}
+		}
+		private void SetAncestors(Func<int, int> apply)
+		{
+			foreach (var item in Ancestors())
+			{
+				item.DescendantsCount = apply(item.DescendantsCount);
+			}
+		}
+		internal void RemoveNode(TreeNodeAdv node)
+		{
+			if (_nodes.Remove(node))
+				SetAncestors(x => x - (node.DescendantsCount + 1));
+		}
+		internal void AddNode(TreeNodeAdv node)
+		{
+			_nodes.Add(node);
+			SetAncestors(x => x + (node.DescendantsCount + 1));
+		}
+		internal void ClearNodes()
+		{
+			int count = _nodes.Count;
+			_nodes.Clear();
+			SetAncestors(x => x - (this.DescendantsCount + count));
+		}
+		internal void InsertNode(int index, TreeNodeAdv node)
+		{
+			_nodes.Insert(index, node);
+			SetAncestors(x => x + (node.DescendantsCount + 1));
+		}
+		internal void RemoveNodeAt(int index)
+		{
+			var node = _nodes[index];
+			_nodes.RemoveAt(index);
+			SetAncestors(x => x - (node.DescendantsCount + 1));
 		}
 
 		private ReadOnlyCollection<TreeNodeAdv> _children;
@@ -420,7 +464,7 @@ namespace Aga.Controls.Tree
 			for (int i = 0; i < nodesCount; i++)
 			{
 				TreeNodeAdv child = (TreeNodeAdv)info.GetValue("Child" + i, typeof(TreeNodeAdv));
-				Nodes.Add(child);
+				AddNode(child);
 			}
 
 		}

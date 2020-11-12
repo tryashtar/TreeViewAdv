@@ -676,7 +676,7 @@ namespace Aga.Controls.Tree
 			if (!parentNode.IsLeaf)
 			{
 				parentNode.IsExpandedOnce = true;
-				parentNode.Nodes.Clear();
+				parentNode.ClearNodes();
 
 				if (Model != null)
 				{
@@ -704,13 +704,13 @@ namespace Aga.Controls.Tree
 		private void AddNode(TreeNodeAdv parent, int index, TreeNodeAdv node)
 		{
 			if (index >= 0 && index < parent.Nodes.Count)
-				parent.Nodes.Insert(index, node);
+				parent.InsertNode(index, node);
 			else
-				parent.Nodes.Add(node);
+				parent.AddNode(node);
 
 			node.IsLeaf = Model.IsLeaf(GetPath(node));
 			if (node.IsLeaf)
-				node.Nodes.Clear();
+				node.ClearNodes();
 			if (!LoadOnDemand || node.IsExpandedOnce)
 				ReadChilds(node);
 		}
@@ -1114,7 +1114,7 @@ namespace Aga.Controls.Tree
 					{
 						int index = list[n];
 						if (index >= 0 && index <= parent.Nodes.Count)
-							parent.Nodes.RemoveAt(index);
+							parent.RemoveNodeAt(index);
 						else
 							throw new ArgumentOutOfRangeException("Index out of range");
 					}
@@ -1126,7 +1126,7 @@ namespace Aga.Controls.Tree
 						for (int n = 0; n < e.Children.Length; n++)
 							if (parent.Nodes[i].Tag == e.Children[n])
 							{
-								parent.Nodes.RemoveAt(i);
+								parent.RemoveNodeAt(i);
 								break;
 							}
 					}
