@@ -322,6 +322,7 @@ namespace Aga.Controls.Tree
 					FullUpdate();
 					if (_model != null)
 						BindModelEvents();
+					OnModelChanged();
 				}
 			}
 		}

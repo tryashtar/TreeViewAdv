@@ -1146,9 +1146,13 @@ namespace Aga.Controls.Tree
 			{
 				for (int i = 0; i < e.Children.Length; i++)
 					AddNewNode(parent, e.Children[i], e.Indices[i]);
+				OnNodesInserted(parent, e);
 			}
 			SmartFullUpdate();
 		}
+
+		protected virtual void OnNodesInserted(TreeNodeAdv parent, TreeModelEventArgs e) { }
+		protected virtual void OnModelChanged() { }
 
 		private void _model_NodesChanged(object sender, TreeModelEventArgs e)
 		{
