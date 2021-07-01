@@ -42,6 +42,8 @@ namespace Aga.Controls.Tree
 		private List<TreeNodeAdv> _expandingNodes = new List<TreeNodeAdv>();
 		private AbortableThreadPool _threadPool = new AbortableThreadPool();
 
+		public event EventHandler<TreeNodeAdv> NodeAdded;
+
 		#region Public Events
 
 		[Category("Action")]
@@ -699,6 +701,7 @@ namespace Aga.Controls.Tree
 		{
 			TreeNodeAdv node = new TreeNodeAdv(this, tag);
 			AddNode(parent, index, node);
+			NodeAdded?.Invoke(this, node);
 		}
 
 		private void AddNode(TreeNodeAdv parent, int index, TreeNodeAdv node)
