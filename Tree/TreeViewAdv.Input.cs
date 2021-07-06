@@ -373,6 +373,7 @@ namespace Aga.Controls.Tree
 			{
 				_toolTip.Active = false;
 				_toolTip.SetToolTip(this, text);
+				_toolTip.Show(text, this, 100000);
 				_toolTip.Active = true;
 			}
 			else
