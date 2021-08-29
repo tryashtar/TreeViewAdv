@@ -673,20 +673,17 @@ namespace Aga.Controls.Tree
 			ReadChilds(parentNode, false);
 		}
 
-		private HashSet<TreeNodeAdv> ReadingChilds = new();
 		internal void ReadChilds(TreeNodeAdv parentNode, bool performFullUpdate)
 		{
 			if (parentNode.IsLeaf)
 				return;
-			if (ReadingChilds.Contains(parentNode))
-				return;
-			ReadingChilds.Add(parentNode);
 			parentNode.IsExpandedOnce = true;
 			parentNode.ClearNodes();
 
 			if (Model != null)
 			{
 				IEnumerable items = Model.GetChildren(GetPath(parentNode));
+				parentNode.ClearNodes();
 				if (items != null)
 					foreach (object obj in items)
 					{
@@ -698,7 +695,6 @@ namespace Aga.Controls.Tree
 
 			if (parentNode.AutoExpandOnStructureChanged)
 				parentNode.ExpandAll();
-			ReadingChilds.Remove(parentNode);
 		}
 
 		private void AddNewNode(TreeNodeAdv parent, object tag, int index)
