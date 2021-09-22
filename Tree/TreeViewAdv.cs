@@ -10,7 +10,7 @@ using System.Collections;
 
 using Aga.Controls.Tree.NodeControls;
 using Aga.Controls.Threading;
-
+using System.Linq;
 
 namespace Aga.Controls.Tree
 {
@@ -678,23 +678,36 @@ namespace Aga.Controls.Tree
 			if (parentNode.IsLeaf)
 				return;
 			parentNode.IsExpandedOnce = true;
-			parentNode.ClearNodes();
 
 			if (Model != null)
 			{
 				IEnumerable items = Model.GetChildren(GetPath(parentNode));
+				var new_nodes = items.Cast<object>().Select(x => GetOrCreateChild(parentNode, x)).ToList();
 				parentNode.ClearNodes();
 				if (items != null)
-					foreach (object obj in items)
+				{
+					foreach (var node in new_nodes)
 					{
-						AddNewNode(parentNode, obj, -1);
-						if (performFullUpdate)
-							FullUpdate();
+						AddNode(parentNode, -1, node);
 					}
+				}
 			}
-
+			else
+				parentNode.ClearNodes();
 			if (parentNode.AutoExpandOnStructureChanged)
 				parentNode.ExpandAll();
+			
+			if (performFullUpdate)
+				FullUpdate();
+		}
+
+		private TreeNodeAdv GetOrCreateChild(TreeNodeAdv parent, object tag)
+        {
+			var existing = parent.Children.FirstOrDefault(x => x.Tag == tag);
+			if (existing != null)
+				return existing;
+			var child = new TreeNodeAdv(this, tag);
+			return child;
 		}
 
 		private void AddNewNode(TreeNodeAdv parent, object tag, int index)
@@ -975,7 +988,7 @@ namespace Aga.Controls.Tree
 
 		private TreeNodeAdv FindNode(TreeNodeAdv root, TreePath path, int level, bool readChilds)
 		{
-			if (!root.IsExpandedOnce && readChilds)
+			if (readChilds)
 				ReadChilds(root);
 
 			for (int i = 0; i < root.Nodes.Count; i++)
@@ -1044,23 +1057,17 @@ namespace Aga.Controls.Tree
 			}
 		}
 
+		public void RefreshModelNodes(IEnumerable<TreePath> paths)
+        {
+            foreach (var path in paths)
+            {
+				var node = FindNode(path, true);
+				ReadChilds(node);
+            }
+			FullUpdate();
+		}
+
 		#region ModelEvents
-		private void BindModelEvents()
-		{
-			_model.NodesChanged += new EventHandler<TreeModelEventArgs>(_model_NodesChanged);
-			_model.NodesInserted += new EventHandler<TreeModelEventArgs>(_model_NodesInserted);
-			_model.NodesRemoved += new EventHandler<TreeModelEventArgs>(_model_NodesRemoved);
-			_model.StructureChanged += new EventHandler<TreePathEventArgs>(_model_StructureChanged);
-		}
-
-		private void UnbindModelEvents()
-		{
-			_model.NodesChanged -= new EventHandler<TreeModelEventArgs>(_model_NodesChanged);
-			_model.NodesInserted -= new EventHandler<TreeModelEventArgs>(_model_NodesInserted);
-			_model.NodesRemoved -= new EventHandler<TreeModelEventArgs>(_model_NodesRemoved);
-			_model.StructureChanged -= new EventHandler<TreePathEventArgs>(_model_StructureChanged);
-		}
-
 		private void _model_StructureChanged(object sender, TreePathEventArgs e)
 		{
 			if (e.Path == null)

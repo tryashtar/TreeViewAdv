@@ -315,13 +315,9 @@ namespace Aga.Controls.Tree
 				if (_model != value)
 				{
 					AbortBackgroundExpandingThreads();
-					if (_model != null)
-						UnbindModelEvents();
 					_model = value;
 					CreateNodes();
 					FullUpdate();
-					if (_model != null)
-						BindModelEvents();
 					OnModelChanged();
 				}
 			}
