@@ -682,32 +682,40 @@ namespace Aga.Controls.Tree
 			if (Model != null)
 			{
 				IEnumerable items = Model.GetChildren(GetPath(parentNode));
-				var new_nodes = items.Cast<object>().Select(x => GetOrCreateChild(parentNode, x)).ToList();
+				var desired_nodes = items.Cast<object>().Select(x => GetOrCreateChild(parentNode, x)).ToArray();
+				var removed_nodes = parentNode.Children.Except(desired_nodes.Select(x => x.node)).ToArray();
 				parentNode.ClearNodes();
 				if (items != null)
 				{
-					foreach (var node in new_nodes)
+					foreach (var node in desired_nodes)
 					{
-						AddNode(parentNode, -1, node);
+						AddNode(parentNode, -1, node.node);
 					}
 				}
+				var path = GetPath(parentNode);
+				var added_nodes = desired_nodes.Where(x => x.is_new).Select(x => x.node).ToArray();
+				if (removed_nodes.Length > 0)
+					OnNodesRemoved(parentNode, new TreeModelEventArgs(path, removed_nodes));
+				if (added_nodes.Length > 0)
+					OnNodesInserted(parentNode, new TreeModelEventArgs(path, added_nodes));
 			}
 			else
 				parentNode.ClearNodes();
 			if (parentNode.AutoExpandOnStructureChanged)
 				parentNode.ExpandAll();
-			
+
+
 			if (performFullUpdate)
 				FullUpdate();
 		}
 
-		private TreeNodeAdv GetOrCreateChild(TreeNodeAdv parent, object tag)
-        {
+		private (TreeNodeAdv node, bool is_new) GetOrCreateChild(TreeNodeAdv parent, object tag)
+		{
 			var existing = parent.Children.FirstOrDefault(x => x.Tag == tag);
 			if (existing != null)
-				return existing;
+				return (existing, false);
 			var child = new TreeNodeAdv(this, tag);
-			return child;
+			return (child, true);
 		}
 
 		private void AddNewNode(TreeNodeAdv parent, object tag, int index)
@@ -756,7 +764,7 @@ namespace Aga.Controls.Tree
 
 			if (AsyncExpanding && LoadOnDemand && !_threadPool.IsMyThread(Thread.CurrentThread))
 			{
-				WaitCallback wc = delegate(object argument) { SetIsExpanded((ExpandArgs)argument); };
+				WaitCallback wc = delegate (object argument) { SetIsExpanded((ExpandArgs)argument); };
 				_threadPool.QueueUserWorkItem(wc, eargs);
 			}
 			else
@@ -1058,12 +1066,12 @@ namespace Aga.Controls.Tree
 		}
 
 		public void RefreshModelNodes(IEnumerable<TreePath> paths)
-        {
-            foreach (var path in paths)
-            {
+		{
+			foreach (var path in paths)
+			{
 				var node = FindNode(path, true);
 				ReadChilds(node);
-            }
+			}
 			FullUpdate();
 		}
 
@@ -1161,7 +1169,10 @@ namespace Aga.Controls.Tree
 			SmartFullUpdate();
 		}
 
-		protected virtual void OnNodesInserted(TreeNodeAdv parent, TreeModelEventArgs e) { }
+		public event EventHandler<TreeModelEventArgs> NodesInserted;
+		protected virtual void OnNodesInserted(TreeNodeAdv parent, TreeModelEventArgs e) { NodesInserted?.Invoke(this, e); }
+		public event EventHandler<TreeModelEventArgs> NodesRemoved;
+		protected virtual void OnNodesRemoved(TreeNodeAdv parent, TreeModelEventArgs e) { NodesRemoved?.Invoke(this, e); }
 		protected virtual void OnModelChanged() { }
 
 		private void _model_NodesChanged(object sender, TreeModelEventArgs e)
